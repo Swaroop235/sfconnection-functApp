@@ -92,3 +92,58 @@ Ensure to replace placeholders (YOUR_CLIENT_ID, YOUR_CLIENT_SECRET, etc.) with y
 ### Important Notes:
 - Salesforce might require you to append a security token to your password. Check your Salesforce settings.
 - Be cautious with hardcoding sensitive information in your code. Consider using a secure method for storing and retrieving these credentials, such as environment variables or a secrets management service.
+
+
+
+
+
+To retrieve an account name from the Salesforce Accounts object using C#, you typically use the Salesforce API, like the SOAP or REST API. Below is an example using the Salesforce REST API. This example assumes you have already obtained an OAuth token and have the necessary permissions to access the Accounts object.
+
+```csharp
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+
+public class SalesforceAccountFetcher
+{
+    private static async Task Main(string[] args)
+    {
+        string instanceUrl = "https://yourInstance.salesforce.com"; // Replace with your Salesforce instance URL
+        string accessToken = "yourAccessToken"; // Replace with your Salesforce OAuth token
+        string accountId = "yourAccountId"; // Replace with the Account Id you want to retrieve
+
+        HttpClient client = new HttpClient();
+        client.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken);
+
+        string query = $"SELECT Name FROM Account WHERE Id = '{accountId}'";
+        string requestUri = $"{instanceUrl}/services/data/v52.0/query?q={Uri.EscapeDataString(query)}";
+
+        HttpResponseMessage response = await client.GetAsync(requestUri);
+        if (response.IsSuccessStatusCode)
+        {
+            string jsonResponse = await response.Content.ReadAsStringAsync();
+            JObject json = JObject.Parse(jsonResponse);
+            string accountName = (string)json["records"][0]["Name"];
+            Console.WriteLine("Account Name: " + accountName);
+        }
+        else
+        {
+            Console.WriteLine("Error: " + response.StatusCode);
+        }
+    }
+}
+```
+
+### Key Points:
+1. **Authentication**: This example uses an OAuth token for authentication. Make sure to replace `"yourAccessToken"` with a valid token obtained through the Salesforce OAuth process.
+2. **Instance URL**: The `instanceUrl` should be your specific Salesforce instance (e.g., `https://na1.salesforce.com`).
+3. **Query**: The SOQL query selects the `Name` field from the `Account` object where the `Id` matches the specified account ID. Replace `"yourAccountId"` with the ID of the account you want to retrieve.
+
+### Prerequisites:
+- You need to install the `Newtonsoft.Json` package for JSON parsing. You can install it via NuGet Package Manager:
+  ```
+  Install-Package Newtonsoft.Json
+  ```
+
+Make sure to handle exceptions and errors appropriately in your actual implementation, especially for network-related issues and JSON parsing errors.
